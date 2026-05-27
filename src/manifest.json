@@ -3,7 +3,7 @@
   "name": "MRU Tab Switcher",
   "version": "1.0",
   "description": "Switch between recently used tabs with a VS Code-style MRU panel (Alt+backtick)",
-  "permissions": ["tabs", "storage", "windows"],
+  "permissions": ["tabs", "storage", "windows", "scripting"],
   "background": {
     "service_worker": "background.js"
   },
@@ -11,7 +11,8 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_start"
+      "run_at": "document_start",
+      "all_frames": true
     }
   ]
 }
