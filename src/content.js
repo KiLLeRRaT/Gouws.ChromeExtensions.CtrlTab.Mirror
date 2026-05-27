@@ -158,14 +158,44 @@
     return panelEl && panelEl.style.display !== 'none';
   }
 
+  function showToast(msg) {
+    injectStyles();
+    let toast = document.getElementById('__mru_toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = '__mru_toast';
+      toast.style.cssText = [
+        'position:fixed', 'bottom:24px', 'left:50%', 'transform:translateX(-50%)',
+        'z-index:2147483647', 'background:rgba(28,28,28,0.95)', 'color:#aaa',
+        'font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
+        'padding:8px 16px', 'border-radius:6px', 'border:1px solid rgba(255,255,255,0.1)',
+        'pointer-events:none', 'transition:opacity 0.3s',
+      ].join(';');
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+  }
+
   document.addEventListener('keydown', async (e) => {
     if (e.altKey && e.code === 'Backquote') {
       e.preventDefault();
       e.stopPropagation();
 
       if (!isPanelVisible()) {
-        const list = await chrome.runtime.sendMessage({ action: 'getMRUList' });
-        if (!list || list.length < 2) return;
+        let list;
+        try {
+          list = await chrome.runtime.sendMessage({ action: 'getMRUList' });
+        } catch (err) {
+          console.error('[MRU] sendMessage failed:', err);
+          return;
+        }
+        if (!list || list.length < 2) {
+          showToast('Switch between a few tabs to build history first');
+          return;
+        }
         mruList = list;
         selectedIndex = 1;
         buildPanel();
