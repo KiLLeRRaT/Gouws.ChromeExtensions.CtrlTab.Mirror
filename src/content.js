@@ -69,7 +69,7 @@
         border-top: 1px solid rgba(255,255,255,0.07);
       }
     `;
-    document.head.appendChild(style);
+    (document.head || document.documentElement).appendChild(style);
   }
 
   function buildPanel() {
@@ -179,10 +179,10 @@
     toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
   }
 
-  document.addEventListener('keydown', async (e) => {
+  window.addEventListener('keydown', async (e) => {
     if (e.altKey && e.code === 'Backquote') {
       e.preventDefault();
-      e.stopPropagation();
+      e.stopImmediatePropagation();
 
       if (!isPanelVisible()) {
         let list;
@@ -209,12 +209,12 @@
 
     if (e.code === 'Escape' && isPanelVisible()) {
       e.preventDefault();
-      e.stopPropagation();
+      e.stopImmediatePropagation();
       closePanel();
     }
   }, true);
 
-  document.addEventListener('keyup', async (e) => {
+  window.addEventListener('keyup', async (e) => {
     if (e.key === 'Alt' && isPanelVisible()) {
       const tab = mruList[selectedIndex];
       closePanel();
