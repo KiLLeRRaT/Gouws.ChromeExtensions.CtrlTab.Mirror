@@ -1,4 +1,10 @@
 (() => {
+  // Clean up any previous instance injected by an earlier extension load
+  if (typeof window.__mruCleanup === 'function') {
+    window.__mruCleanup();
+    window.__mruCleanup = null;
+  }
+
   let panelEl = null;
   let listEl = null;
   let mruList = [];
@@ -179,46 +185,66 @@
     toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
   }
 
-  window.addEventListener('keydown', async (e) => {
-    if (e.altKey && e.code === 'Backquote') {
-      e.preventDefault();
-      e.stopImmediatePropagation();
+  function isContextInvalidated(err) {
+    return err?.message?.includes('Extension context invalidated') ||
+           err?.message?.includes('Cannot read properties of undefined');
+  }
 
-      if (!isPanelVisible()) {
-        let list;
-        try {
-          list = await chrome.runtime.sendMessage({ action: 'getMRUList' });
-        } catch (err) {
-          console.error('[MRU] sendMessage failed:', err);
-          return;
+  async function onKeyDown(e) {
+    try {
+      if (e.altKey && e.code === 'Backquote') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        if (!isPanelVisible()) {
+          const list = await chrome.runtime.sendMessage({ action: 'getMRUList' });
+          if (!list || list.length < 2) {
+            showToast('Switch between a few tabs to build history first');
+            return;
+          }
+          mruList = list;
+          selectedIndex = 1;
+          buildPanel();
+        } else {
+          if (mruList.length < 2) return;
+          selectedIndex = selectedIndex >= mruList.length - 1 ? 1 : selectedIndex + 1;
+          renderList();
         }
-        if (!list || list.length < 2) {
-          showToast('Switch between a few tabs to build history first');
-          return;
-        }
-        mruList = list;
-        selectedIndex = 1;
-        buildPanel();
-      } else {
-        if (mruList.length < 2) return;
-        selectedIndex = selectedIndex >= mruList.length - 1 ? 1 : selectedIndex + 1;
-        renderList();
+        return;
       }
-      return;
-    }
 
-    if (e.code === 'Escape' && isPanelVisible()) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      closePanel();
+      if (e.code === 'Escape' && isPanelVisible()) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        closePanel();
+      }
+    } catch (err) {
+      if (!isContextInvalidated(err)) console.error('[MRU] keydown error:', err);
     }
-  }, true);
+  }
 
-  window.addEventListener('keyup', async (e) => {
-    if (e.key === 'Alt' && isPanelVisible()) {
-      const tab = mruList[selectedIndex];
-      closePanel();
-      if (tab) await chrome.runtime.sendMessage({ action: 'switchToTab', tabId: tab.tabId });
+  async function onKeyUp(e) {
+    try {
+      if (e.key === 'Alt' && isPanelVisible()) {
+        const tab = mruList[selectedIndex];
+        closePanel();
+        if (tab) await chrome.runtime.sendMessage({ action: 'switchToTab', tabId: tab.tabId });
+      }
+    } catch (err) {
+      if (!isContextInvalidated(err)) console.error('[MRU] keyup error:', err);
     }
-  }, true);
+  }
+
+  window.addEventListener('keydown', onKeyDown, true);
+  window.addEventListener('keyup', onKeyUp, true);
+
+  window.__mruCleanup = () => {
+    window.removeEventListener('keydown', onKeyDown, true);
+    window.removeEventListener('keyup', onKeyUp, true);
+    document.getElementById('__mru_tab_panel')?.remove();
+    document.getElementById('__mru_tab_styles')?.remove();
+    document.getElementById('__mru_toast')?.remove();
+    panelEl = null;
+    listEl = null;
+  };
 })();

@@ -28,7 +28,15 @@ async function initializeHistory() {
 }
 
 chrome.runtime.onStartup.addListener(initializeHistory);
-chrome.runtime.onInstalled.addListener(initializeHistory);
+
+chrome.runtime.onInstalled.addListener(async () => {
+  await initializeHistory();
+  // Re-inject into all already-open tabs so stale content scripts don't linger
+  const tabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] });
+  await Promise.allSettled(
+    tabs.map(tab => chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] }))
+  );
+});
 
 async function getHistory() {
   const result = await chrome.storage.session.get(HISTORY_KEY);
