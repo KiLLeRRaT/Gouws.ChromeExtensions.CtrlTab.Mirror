@@ -26,8 +26,8 @@ The panel lists your recently used tabs in order, with favicons and hostnames:
 ┌──────────────────────────────────────┐
 │  RECENTLY USED TABS (ALT+`)          │
 ├──────────────────────────────────────┤
-│   ● github.com — Pull Request #42   │
-│ ▶ ● gmail.com — Inbox               │  ← selected
+│   ● github.com — Pull Request #42    │
+│ ▶ ● gmail.com — Inbox                │  ← selected
 │   ● localhost:3000 — App             │
 │   ● stackoverflow.com — ...          │
 └──────────────────────────────────────┘
