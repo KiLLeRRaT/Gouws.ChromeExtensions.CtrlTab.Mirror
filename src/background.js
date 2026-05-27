@@ -1,6 +1,35 @@
 const HISTORY_KEY = 'tabHistory';
 const MAX_HISTORY = 20;
 
+async function initializeHistory() {
+  const existing = await getHistory();
+  if (existing.length > 0) return;
+  try {
+    const [activeTabs, allTabs] = await Promise.all([
+      chrome.tabs.query({ active: true, currentWindow: true }),
+      chrome.tabs.query({}),
+    ]);
+    const activeId = activeTabs[0]?.id;
+    const sorted = [...allTabs].sort((a, b) => {
+      if (a.id === activeId) return -1;
+      if (b.id === activeId) return 1;
+      return 0;
+    });
+    const history = sorted.map(tab => ({
+      tabId: tab.id,
+      title: tab.title || tab.url || 'New Tab',
+      url: tab.url || '',
+      favIconUrl: tab.favIconUrl || '',
+    })).slice(0, MAX_HISTORY);
+    await setHistory(history);
+  } catch (e) {
+    console.error('[MRU] Failed to initialize history:', e);
+  }
+}
+
+chrome.runtime.onStartup.addListener(initializeHistory);
+chrome.runtime.onInstalled.addListener(initializeHistory);
+
 async function getHistory() {
   const result = await chrome.storage.session.get(HISTORY_KEY);
   return result[HISTORY_KEY] || [];
