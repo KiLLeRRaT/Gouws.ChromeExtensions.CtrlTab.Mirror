@@ -2,10 +2,16 @@
   "manifest_version": 3,
   "name": "MRU Tab Switcher",
   "version": "1.0",
-  "description": "Switch between recently used tabs with a VS Code-style MRU panel (Alt+backtick)",
+  "description": "Switch between recently used tabs with a VS Code-style MRU panel (Alt+Q)",
   "permissions": ["tabs", "storage", "windows", "scripting"],
   "background": {
     "service_worker": "background.js"
+  },
+  "commands": {
+    "switch-mru": {
+      "suggested_key": { "default": "Alt+Q" },
+      "description": "Show MRU tab switcher panel"
+    }
   },
   "content_scripts": [
     {

@@ -6,7 +6,7 @@ Chrome's built-in Ctrl+Tab cycles through tabs in order. This extension instead 
 
 ## Shortcut
 
-**Alt+`** (Alt + backtick)
+**Alt+Q**
 
 > Chrome reserves Ctrl+Tab at the browser level so it cannot be overridden by extensions.
 > You can remap the shortcut at `chrome://extensions/shortcuts`.
@@ -15,8 +15,8 @@ Chrome's built-in Ctrl+Tab cycles through tabs in order. This extension instead 
 
 | Action | Result |
 |---|---|
-| Press **Alt+`** | Panel opens, previous tab highlighted |
-| Hold Alt, press **`** again | Selection moves to next tab in MRU order |
+| Press **Alt+Q** | Panel opens, previous tab highlighted |
+| Hold Alt, press **Q** again | Selection moves to next tab in MRU order |
 | Release **Alt** | Switches to the selected tab |
 | Press **Esc** | Dismisses the panel without switching |
 
@@ -24,14 +24,14 @@ The panel lists your recently used tabs in order, with favicons and hostnames:
 
 ```
 ┌──────────────────────────────────────┐
-│  RECENTLY USED TABS (ALT+`)          │
+│  RECENTLY USED TABS (ALT+Q)          │
 ├──────────────────────────────────────┤
 │   ● github.com — Pull Request #42    │
 │ ▶ ● gmail.com — Inbox                │  ← selected
 │   ● localhost:3000 — App             │
 │   ● stackoverflow.com — ...          │
 └──────────────────────────────────────┘
-  ` cycle · release Alt to switch · Esc to cancel
+  Q cycle · release Alt to switch · Esc to cancel
 ```
 
 ## Installation
