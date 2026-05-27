@@ -91,6 +91,22 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
   await setHistory(history);
 });
 
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command !== 'switch-mru') return;
+  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!activeTab) return;
+  chrome.tabs.sendMessage(activeTab.id, { action: 'commandTriggered' }).catch(async () => {
+    // No content script available (page loading, new tab, etc.) — switch directly
+    const history = await getHistory();
+    if (history.length < 2) return;
+    try {
+      const tab = await chrome.tabs.get(history[1].tabId);
+      await chrome.windows.update(tab.windowId, { focused: true });
+      await chrome.tabs.update(history[1].tabId, { active: true });
+    } catch {}
+  });
+});
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === 'getMRUList') {
     getHistory().then(sendResponse);

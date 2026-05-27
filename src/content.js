@@ -87,19 +87,19 @@
 
       const header = document.createElement('div');
       header.className = 'header';
-      header.textContent = 'Recently Used Tabs (Alt+`)';
+      header.textContent = 'Recently Used Tabs (Alt+Q)';
 
       listEl = document.createElement('div');
       listEl.className = 'list';
 
       const footer = document.createElement('div');
       footer.className = 'footer';
-      footer.textContent = '` cycle · release Alt to switch · Esc to cancel';
+      footer.textContent = 'Q cycle · release Alt to switch · Esc to cancel';
 
       panelEl.appendChild(header);
       panelEl.appendChild(listEl);
       panelEl.appendChild(footer);
-      document.body.appendChild(panelEl);
+      (document.body || document.documentElement).appendChild(panelEl);
     }
 
     renderList();
@@ -177,7 +177,7 @@
         'padding:8px 16px', 'border-radius:6px', 'border:1px solid rgba(255,255,255,0.1)',
         'pointer-events:none', 'transition:opacity 0.3s',
       ].join(';');
-      document.body.appendChild(toast);
+      (document.body || document.documentElement).appendChild(toast);
     }
     toast.textContent = msg;
     toast.style.opacity = '1';
@@ -190,26 +190,43 @@
            err?.message?.includes('Cannot read properties of undefined');
   }
 
+  async function handleCommand() {
+    // Only the frame with keyboard focus should respond
+    if (!document.hasFocus()) return;
+    try {
+      if (!isPanelVisible()) {
+        const list = await chrome.runtime.sendMessage({ action: 'getMRUList' });
+        if (!list || list.length < 2) {
+          showToast('Switch between a few tabs to build history first');
+          return;
+        }
+        mruList = list;
+        selectedIndex = 1;
+        buildPanel();
+      } else {
+        if (mruList.length < 2) return;
+        selectedIndex = selectedIndex >= mruList.length - 1 ? 1 : selectedIndex + 1;
+        renderList();
+      }
+    } catch (err) {
+      if (!isContextInvalidated(err)) console.error('[MRU] command error:', err);
+    }
+  }
+
+  function onMessage(message, _sender, sendResponse) {
+    if (message.action === 'commandTriggered') {
+      sendResponse({});
+      handleCommand();
+    }
+  }
+
   async function onKeyDown(e) {
     try {
-      if (e.altKey && e.code === 'Backquote') {
+      if (e.altKey && e.code === 'KeyQ') {
+        // Prevent the page from reacting to Alt+Q; show/advance is driven by
+        // chrome.commands in the background → commandTriggered message
         e.preventDefault();
         e.stopImmediatePropagation();
-
-        if (!isPanelVisible()) {
-          const list = await chrome.runtime.sendMessage({ action: 'getMRUList' });
-          if (!list || list.length < 2) {
-            showToast('Switch between a few tabs to build history first');
-            return;
-          }
-          mruList = list;
-          selectedIndex = 1;
-          buildPanel();
-        } else {
-          if (mruList.length < 2) return;
-          selectedIndex = selectedIndex >= mruList.length - 1 ? 1 : selectedIndex + 1;
-          renderList();
-        }
         return;
       }
 
@@ -237,10 +254,12 @@
 
   window.addEventListener('keydown', onKeyDown, true);
   window.addEventListener('keyup', onKeyUp, true);
+  chrome.runtime.onMessage.addListener(onMessage);
 
   window.__mruCleanup = () => {
     window.removeEventListener('keydown', onKeyDown, true);
     window.removeEventListener('keyup', onKeyUp, true);
+    chrome.runtime.onMessage.removeListener(onMessage);
     document.getElementById('__mru_tab_panel')?.remove();
     document.getElementById('__mru_tab_styles')?.remove();
     document.getElementById('__mru_toast')?.remove();
